@@ -1,0 +1,24 @@
+name: map2seq
+channels:
+- defaults
+- conda-forge
+dependencies:
+- python=3.10
+- cctbx
+- pip:
+  - streamlit
+  - bokeh>=3.8.2
+  - boost
+  - h5py
+  - hmmer
+  - mrcfile
+  - numpy
+  - pandas
+  - pyfastx
+  - pyhmmer>=0.12.0
+  - scipy
+  - streamlit>=1.38.0
+  - streamlit_molstar
+  - streamlit_bokeh>=3.8.2
+  - torch>2.3.1
+  - zstandard

@@ -24,85 +24,14 @@ tmpdir = "map2seq_out"
 if not os.path.isdir(tmpdir):
     os.mkdir(tmpdir)
 
-#st.info(os.environ["LD_LIBRARY_PATH"])
 from shutil import which
-#st.info(which("python"))
 
-#st.write(sys.prefix)
-
-try:
-    import cctbx
-    #raise ImportError
-except ImportError:
-    import zstandard
-    import tempfile
-    import tarfile
-    import numpy as np
-   
-    #st.info("downloading cctbx-base")
-    ds = np.DataSource(tmpdir)
-    #url_final = "https://drive.google.com/uc?export=download&id=1pWpLoyUOXqTbktqOJ24X5bdXa8u7lb0Y"
-    url_final="https://app.box.com/shared/static/1g86uapr33273a4vlvgkfzfq2swgemuh.zst"
-    #url_final="https://drive.google.com/uc?export=download&id=1pMarQnGuABG9MRp9DW0TFY_hStakNF4S"
-    if not ds.exists(url_final):
-        print("download error")
-    with ds.open(url_final) as fp:
-        filename_final = fp.name
-    filepath_final = Path(filename_final).resolve()
-    #st.write(filepath_final)
-    working_dir=Path.cwd()
-    #st.write(working_dir)
-    #out_path=Path("/home/appuser/venv/")
-    root_folder = Path(sys.executable).parent.parent
-    #st.write(Path(sys.executable))
-    dctx=zstandard.ZstdDecompressor()
-    with tempfile.TemporaryFile(suffix=".tar") as ofh:
-        with filepath_final.open("rb") as ifh:
-            dctx.copy_stream(ifh,ofh)
-        ofh.seek(0)
-        with tarfile.open(fileobj=ofh) as z:
-            #z.extractall(root_folder)
-            z.extractall(working_dir)
-    #os.system("ls /home/appuser/venv/lib/python3.9/lib-dynload")
-    #os.system("ldd /home/appuser/venv/lib/python3.9/lib-dynload/boost_python_meta_ext.so")
-    #dylib_folder = root_folder/f"lib/python{sys.version_info.major}.{sys.version_info.minor}/lib-dynload"
-    dylib_folder = working_dir/f"lib/python{sys.version_info.major}.{sys.version_info.minor}/lib-dynload"
-    pkg_folder = working_dir/f"lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages"
-    sys.path.append(dylib_folder.as_posix())
-    sys.path.append(pkg_folder.as_posix())
-    sys.path.append(pkg_folder.as_posix())
-    #sys.path.append(f"{root_folder}/lib")
-    sys.path.append(f"{working_dir}/lib")
-    sys.path.append(f"{working_dir}/share")
-    sys.path.append(f"{working_dir}/bin")
-    sys.path.append(f"{working_dir}/include")
-    #os.system("rm /home/appuser/venv/lib/libstdc++.so.6")
-    #os.system("ln -s /home/appuser/venv/lib/libstdc++.so.6.0.30 /home/appuser/venv/lib/libstdc++.so.6")
-    #os.system("strings /usr/lib/x86_64-linux-gnu/libstdc++.so.6 | grep GLIBCXX")
-    #os.system("ldd /home/appuser/venv/lib/python3.9/lib-dynload/cctbx_xray_ext.so")
-    #os.system("strings /home/appuser/venv/lib/libstdc++.so.6 | grep GLIBCXX")
-    #st.info(dylib_folder)
-    os.environ["LD_LIBRARY_PATH"] = f"{dylib_folder.as_posix()}:{root_folder}/lib"
-    #st.info(os.environ["LD_LIBRARY_PATH"])
-
-
-
-#st.info(list(Path("/home/appuser/venv/").rglob("*tbx*")))
-#import cctbx
-
-
-#if Path("/home/appuser").exists():
-#    # essential to avoid cctbx import errors
-#    target = Path("/home/appuser/venv/share/cctbx")
-#    if not target.exists():
-#        target.symlink_to("/home/appuser/.conda/share/cctbx")
-#
-#    sys.path += ["/home/appuser/venv/lib/python3.9/lib-dynload"]
-#    os.environ["PATH"] += os.pathsep + "/home/appuser/.conda/bin"
+import cctbx
 
 
 import numpy as np
 import pandas as pd
+from streamlit_bokeh import streamlit_bokeh
 from bokeh.plotting import ColumnDataSource, figure
 from bokeh.models import Label, BasicTicker, ColorBar, LinearColorMapper, PrintfTickFormatter
 
@@ -383,14 +312,14 @@ def main():
 
             xs, ys = res
                 
-        source = ColumnDataSource(data=dict(x=range(1,len(xs)+1),y=ys,ID=xs))
+        source = ColumnDataSource(data=dict(x=list(range(1,len(xs)+1)),y=ys,ID=xs))
         top_source = ColumnDataSource(data=dict(x=[1],y=[ys[0]],ID=[xs[0]]))
-        label = Label(x=1, y=ys[0], text=f'Best match: {xs[0]}', x_offset=10, y_offset=-5, text_font_size='16px', render_mode='canvas')
+        label = Label(x=1, y=ys[0], text=f'Best match: {xs[0]}', x_offset=10, y_offset=-5, text_font_size='16px')
 
         TOOLTIPS = [('Rank','@x'),('Protein','@ID'),('E-val','@y')]
         p = figure(tooltips=TOOLTIPS, y_axis_type='log', title='')
-        p.circle('x','y',source=source)
-        p.circle('x','y',source=top_source, size=10,line_color='red',fill_color='red')
+        p.scatter('x','y',source=source)
+        p.scatter('x','y',source=top_source,size=10,line_color='red',fill_color='red')
         p.yaxis.axis_label = 'E-values'
         p.xaxis.axis_label = 'Rank Order'
         p.y_range.flipped = True
@@ -400,7 +329,8 @@ def main():
         p.xaxis.major_label_text_font_size = "16pt"
         p.yaxis.major_label_text_font_size = "16pt"
         
-        st.bokeh_chart(p, use_container_width=True)
+        #st.bokeh_chart(p, use_container_width=True)
+        streamlit_bokeh(p, use_container_width=True)
                 
     with col2:
         df = pd.DataFrame({"E-val (log10)":np.log10(ys).T, "Protein":np.array(xs).T})
@@ -538,7 +468,7 @@ def main():
                      label_standoff=6, border_line_color=None)
         hm.add_layout(color_bar, 'right')
         
-        hm
+        streamlit_bokeh(hm)
         
     
     with col3:
@@ -712,7 +642,7 @@ def get_file_from_url(url):
             local_file_name.symlink_to(url)
         else:
             url_final = get_direct_url(url)    # convert cloud drive indirect url to direct url
-            ds = np.DataSource(None)
+            ds = np.lib.npyio.DataSource(None)
             if not ds.exists(url_final):
                 st.error(f"ERROR: {url} could not be downloaded. If this url points to a cloud drive file, make sure the link is a direct download link instead of a link for preview")
                 st.stop()
@@ -843,7 +773,7 @@ def remove_old_pdbs(keep=0):
 def get_pdb_ids():
     try:
         url = "ftp://ftp.wwpdb.org/pub/pdb/derived_data/index/entries.idx"
-        ds = np.DataSource(None)
+        ds = np.lib.npyio.DataSource(None)
         with ds.open(url) as fp:
             pdb_ids = [line[:4] for line in fp.readlines()[2:] if len(line) > 4]
     except:
